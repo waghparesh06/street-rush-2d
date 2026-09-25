@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>STREET RUSH 2D — Arcade & Online Multiplayer Racing</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏎️</text></svg>">
+</head>
+<body>
+
+  <div id="game-wrapper">
+    <div id="game-container">
+
+      <!-- Canvas for Road, Player, Opponents, Traffic, Collectibles & Visual FX -->
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Toast Feedback Popup -->
+      <div id="toast-notification">MESSAGE</div>
+
+      <!-- Synchronized Countdown Overlay -->
+      <div id="countdown-overlay" class="countdown-overlay">
+        <div id="countdown-number" class="countdown-number">3</div>
+      </div>
+
+      <!-- ================= 1. MAIN MENU ================= -->
+      <div id="main-menu" class="ui-screen active">
+        <div class="menu-hero">
+          <h1 class="game-logo">STREET RUSH</h1>
+          <div class="game-subtitle">2D ARCADE & MULTIPLAYER</div>
+          <div class="menu-car-silhouette"></div>
+        </div>
+
+        <div class="menu-stats-bar">
+          <div class="menu-stat-item">
+            <span class="label">Best Score</span>
+            <span class="value" id="menu-best-score">0</span>
+          </div>
+          <div class="menu-stat-item">
+            <span class="label">Total Coins</span>
+            <span class="value" id="menu-total-coins">0</span>
+          </div>
+          <div class="menu-stat-item">
+            <span class="label">Solo Stage</span>
+            <span class="value" id="menu-current-level">LEVEL 1</span>
+          </div>
+        </div>
+
+        <div class="menu-btn-stack">
+          <button id="btn-play-solo" class="btn btn-primary"><span>🔥</span> PLAY SOLO</button>
+          <button id="btn-multiplayer" class="btn btn-cyan"><span>🌐</span> MULTIPLAYER (2-4P)</button>
+          <button id="btn-garage" class="btn btn-gold"><span>🛠️</span> GARAGE</button>
+          <button id="btn-cars" class="btn"><span>🏎️</span> CARS</button>
+          <button id="btn-how-to-play" class="btn"><span>📖</span> HOW TO PLAY</button>
+          <button id="btn-settings" class="btn"><span>⚙️</span> SETTINGS</button>
+        </div>
+      </div>
+
+      <!-- ================= 2. MULTIPLAYER ENTRY MENU ================= -->
+      <div id="mp-menu" class="ui-screen">
+        <div class="screen-header">
+          <button class="btn btn-back">‹ BACK</button>
+          <h2 class="screen-title">MULTIPLAYER</h2>
+          <div style="width: 60px;"></div>
+        </div>
+
+        <div class="mp-entry-container">
+          <div class="mp-input-group">
+            <label>YOUR RACER NAME</label>
+            <input type="text" id="mp-player-name-input" maxlength="18" placeholder="Enter name (e.g. SpeedDemon)">
+          </div>
+
+          <div class="menu-btn-stack" style="margin-top: 18px; width: 100%;">
+            <button id="btn-mp-create-room" class="btn btn-primary" style="padding: 16px;">
+              <span>➕</span> CREATE PRIVATE ROOM
+            </button>
+            <button id="btn-mp-join-room-screen" class="btn btn-cyan" style="padding: 16px;">
+              <span>🔑</span> JOIN WITH ROOM CODE
+            </button>
+          </div>
+
+          <div class="mp-info-card">
+            <h4>🌐 HOW MULTIPLAYER WORKS</h4>
+            <p>1. Host creates a room & receives a short code.<br>
+               2. Friends enter code to join (2–4 players).<br>
+               3. Host starts synchronized 3000m highway sprint!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 3. MULTIPLAYER JOIN MENU ================= -->
+      <div id="mp-join-menu" class="ui-screen">
+        <div class="screen-header">
+          <button class="btn btn-back" onclick="ui.showScreen('mp-menu')">‹ BACK</button>
+          <h2 class="screen-title">JOIN ROOM</h2>
+          <div style="width: 60px;"></div>
+        </div>
+
+        <div class="mp-entry-container">
+          <div class="mp-input-group">
+            <label>ENTER 5-DIGIT ROOM CODE</label>
+            <input type="text" id="mp-room-code-input" maxlength="5" placeholder="e.g. X7K92" style="text-transform: uppercase; font-size: 24px; letter-spacing: 4px; text-align: center;">
+          </div>
+
+          <div class="menu-btn-stack" style="margin-top: 20px; width: 100%;">
+            <button id="btn-mp-submit-join" class="btn btn-cyan" style="padding: 16px;">
+              <span>🚀</span> JOIN RACE ROOM
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 4. MULTIPLAYER LOBBY ================= -->
+      <div id="mp-lobby-menu" class="ui-screen">
+        <div class="screen-header">
+          <button id="btn-mp-leave-room" class="btn btn-back">‹ LEAVE</button>
+          <h2 class="screen-title">RACE LOBBY</h2>
+          <div class="header-coins-badge" id="lobby-player-count">1 / 4</div>
+        </div>
+
+        <div class="lobby-code-banner">
+          <div class="code-box">
+            <span class="code-label">ROOM CODE</span>
+            <span id="lobby-room-code-display" class="code-text">-----</span>
+          </div>
+          <button id="btn-mp-copy-code" class="btn btn-cyan" style="padding: 8px 14px; font-size: 12px;">
+            📋 COPY CODE
+          </button>
+        </div>
+
+        <div id="lobby-players-list" class="lobby-players-list">
+          <!-- Dynamically populated via ui.js -->
+        </div>
+
+        <div class="lobby-footer">
+          <p id="lobby-status-hint" class="lobby-hint">Waiting for players...</p>
+          <div class="lobby-action-buttons">
+            <button id="btn-mp-start-race" class="btn btn-primary" style="width: 100%; padding: 14px; display: none;">
+              🏁 START RACE
+            </button>
+            <button id="btn-mp-toggle-ready" class="btn btn-cyan" style="width: 100%; padding: 14px;">
+              SET READY ✓
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 5. LEVEL SELECT MENU (SOLO) ================= -->
+      <div id="level-select-menu" class="ui-screen">
+        <div class="screen-header">
+          <button class="btn btn-back">‹ BACK</button>
+          <h2 class="screen-title">SELECT STAGE</h2>
+          <div style="width: 60px;"></div>
+        </div>
+        <div id="level-select-grid" class="level-select-grid">
+          <!-- Dynamically populated via ui.js -->
+        </div>
+      </div>
+
+      <!-- ================= 6. SHOWROOM / CARS MENU ================= -->
+      <div id="cars-menu" class="ui-screen">
+        <div class="screen-header">
+          <button class="btn btn-back">‹ BACK</button>
+          <h2 class="screen-title">SHOWROOM</h2>
+          <div class="header-coins-badge">🪙 <span id="cars-header-coins">0</span></div>
+        </div>
+        <div id="cars-grid" class="cars-grid">
+          <!-- Dynamically populated via ui.js -->
+        </div>
+      </div>
+
+      <!-- ================= 7. TUNING GARAGE MENU ================= -->
+      <div id="garage-menu" class="ui-screen">
+        <div class="screen-header">
+          <button class="btn btn-back">‹ BACK</button>
+          <h2 class="screen-title">TUNING GARAGE</h2>
+          <div class="header-coins-badge">🪙 <span id="garage-header-coins">0</span></div>
+        </div>
+
+        <div class="garage-hero">
+          <div>
+            <h3 id="garage-car-name">BLAZE GT</h3>
+            <span id="garage-car-tag" style="font-size: 11px; font-weight: 800;">STARTER</span>
+          </div>
+          <button class="btn btn-cyan" onclick="ui.showScreen('cars-menu')">SWITCH CAR</button>
+        </div>
+
+        <div id="garage-upgrades-list" class="garage-upgrades-list">
+          <!-- Dynamically populated via ui.js -->
+        </div>
+      </div>
+
+      <!-- ================= 8. SETTINGS MENU ================= -->
+      <div id="settings-menu" class="ui-screen">
+        <div class="screen-header">
+          <button class="btn btn-back">‹ BACK</button>
+          <h2 class="screen-title">SETTINGS</h2>
+          <div style="width: 60px;"></div>
+        </div>
+
+        <div class="settings-list">
+          <div class="setting-item">
+            <div class="setting-info">
+              <h4>Sound Effects</h4>
+              <p>Engine roar, crashes, pickups</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-sound" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <h4>Synthwave BGM</h4>
+              <p>Procedural electronic background music</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-music" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <h4>Screen Shake</h4>
+              <p>Dynamic camera impact vibration</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-shake" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <h4>Reduced Effects</h4>
+              <p>Lower screen flashes for accessibility</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-reduced-effects">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <button id="btn-reset-data" class="btn" style="width: 100%; border-color: #ef4444; color: #ef4444;">
+              ⚠️ RESET GAME DATA
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 9. HOW TO PLAY ================= -->
+      <div id="how-to-play-menu" class="ui-screen">
+        <div class="screen-header">
+          <button class="btn btn-back">‹ BACK</button>
+          <h2 class="screen-title">HOW TO PLAY</h2>
+          <div style="width: 60px;"></div>
+        </div>
+
+        <div class="guide-content">
+          <div class="guide-block">
+            <h4>🎮 CONTROLS</h4>
+            <div class="guide-keys" style="margin-bottom: 8px;">
+              <span class="key-badge">A / LEFT</span>
+              <span class="key-badge">D / RIGHT</span>
+              <span>Steer Left / Right</span>
+            </div>
+            <div class="guide-keys" style="margin-bottom: 8px;">
+              <span class="key-badge">W / UP</span>
+              <span class="key-badge">S / DOWN</span>
+              <span>Accelerate / Brake</span>
+            </div>
+            <div class="guide-keys" style="margin-bottom: 8px;">
+              <span class="key-badge">SPACE</span>
+              <span>Engage Nitro Boost</span>
+            </div>
+            <div class="guide-keys">
+              <span class="key-badge">ESC</span>
+              <span>Pause Race (Solo)</span>
+            </div>
+          </div>
+
+          <div class="guide-block">
+            <h4>🌐 MULTIPLAYER MODE</h4>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+              • Compete against up to 3 friends online in real-time.<br>
+              • 3000-meter sprint to the finish line.<br>
+              • Real-time distance leaderboard and final podium ranks!
+            </p>
+          </div>
+
+          <div class="guide-block">
+            <h4>🔥 GAME MECHANICS</h4>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+              • <strong>Near Miss (+50):</strong> Pass tight alongside enemy cars for huge bonuses!<br>
+              • <strong>Power-Ups:</strong> Shield 🛡️, Coin Magnet 🧲, Nitro Refill ⚡, 2X Score ⭐.<br>
+              • <strong>Garage:</strong> Tune your car's speed and armor with coins!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 10. RACING HUD ================= -->
+      <div id="hud" class="ui-screen">
+        <div class="hud-top-bar">
+          <div class="hud-pill" id="hud-health">❤️ ❤️ ❤️</div>
+          
+          <div class="hud-score-box">
+            <span class="hud-score-val" id="hud-score">0</span>
+            <span class="hud-dist-val" id="hud-distance">0m / 1500m</span>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <div class="hud-pill" style="color: #fef08a;">🪙 <span id="hud-coins">0</span></div>
+            <button class="hud-btn-pause" id="hud-btn-pause">❚❚</button>
+            <div id="hud-mp-position" class="hud-pill hud-mp-pos" style="display: none; color: var(--accent-cyan);">
+              POS: <span id="hud-mp-position-val">1 / 4</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-progress-container">
+          <div id="hud-progress-fill" class="hud-progress-fill"></div>
+        </div>
+
+        <!-- Multiplayer Live Mini Leaderboard -->
+        <div id="hud-mp-leaderboard" class="hud-mp-leaderboard" style="display: none;">
+          <div class="hud-lead-header">LEADERBOARD</div>
+          <div id="hud-mp-leaderboard-list" class="hud-lead-list"></div>
+        </div>
+
+        <div class="hud-bottom-bar">
+          <div id="hud-powerups" class="hud-powerups-list"></div>
+
+          <div class="hud-nitro-container">
+            <div class="hud-nitro-header">
+              <span style="color: var(--accent-gold);">NITRO PROPULSION</span>
+              <span id="hud-nitro-status" style="color: var(--accent-cyan);">NITRO READY ⚡</span>
+            </div>
+            <div class="hud-nitro-bar">
+              <div id="hud-nitro-fill" class="hud-nitro-fill"></div>
+            </div>
+          </div>
+
+          <!-- Mobile On-Screen Buttons -->
+          <div class="mobile-controls">
+            <div class="mobile-dpad">
+              <button class="touch-btn" id="mobile-btn-left">◀</button>
+              <button class="touch-btn" id="mobile-btn-right">▶</button>
+            </div>
+            <button class="touch-btn touch-btn-nitro" id="mobile-btn-nitro">🚀</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= MODALS ================= -->
+
+      <!-- Pause Modal (Solo) -->
+      <div id="modal-pause" class="modal-overlay">
+        <div class="modal-box">
+          <h2 class="modal-title" style="color: var(--accent-cyan);">PAUSED</h2>
+          <p style="color: var(--text-muted); font-size: 14px;">Take a breath before hitting the gas again.</p>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="btn-pause-resume" class="btn btn-primary">RESUME RACE</button>
+            <button id="btn-pause-restart" class="btn btn-gold">RESTART</button>
+            <button id="btn-pause-menu" class="btn">MAIN MENU</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Over Modal (Solo) -->
+      <div id="modal-gameover" class="modal-overlay">
+        <div class="modal-box">
+          <h2 class="modal-title" style="color: var(--primary);">RACE OVER</h2>
+          <div id="go-new-high-tag" class="new-high-badge" style="display: none;">🏆 NEW HIGH SCORE!</div>
+          
+          <div class="modal-stats-grid">
+            <div class="modal-stat">
+              <span class="label">Final Score</span>
+              <span class="value" id="go-final-score">0</span>
+            </div>
+            <div class="modal-stat">
+              <span class="label">Distance</span>
+              <span class="value" id="go-distance">0m</span>
+            </div>
+            <div class="modal-stat">
+              <span class="label">Coins Gained</span>
+              <span class="value" id="go-coins">+0</span>
+            </div>
+            <div class="modal-stat">
+              <span class="label">Near Misses</span>
+              <span class="value" id="go-near-misses">0</span>
+            </div>
+          </div>
+
+          <div style="font-size: 12px; color: var(--text-muted);">
+            Best Score: <strong id="go-best-score" style="color: #ffffff;">0</strong>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="btn-gameover-retry" class="btn btn-primary">TRY AGAIN</button>
+            <button id="btn-gameover-garage" class="btn btn-gold">GARAGE / UPGRADES</button>
+            <button id="btn-gameover-menu" class="btn">MAIN MENU</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level Complete Modal (Solo) -->
+      <div id="modal-levelcomplete" class="modal-overlay">
+        <div class="modal-box">
+          <h2 class="modal-title" id="lc-title" style="color: #10b981;">LEVEL COMPLETE!</h2>
+          <p id="lc-name" style="color: var(--accent-cyan); font-weight: 800; font-size: 15px;">Suburban Cruise</p>
+          
+          <div class="modal-stats-grid">
+            <div class="modal-stat">
+              <span class="label">Score</span>
+              <span class="value" id="lc-score">0</span>
+            </div>
+            <div class="modal-stat">
+              <span class="label">Collected</span>
+              <span class="value" id="lc-coins">+0</span>
+            </div>
+            <div class="modal-stat">
+              <span class="label">Completion Bonus</span>
+              <span class="value" id="lc-bonus">+50</span>
+            </div>
+            <div class="modal-stat">
+              <span class="label">Total Reward</span>
+              <span class="value" id="lc-total-coins">+0 🪙</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="btn-levelcomplete-next" class="btn btn-primary">NEXT LEVEL ➔</button>
+            <button id="btn-levelcomplete-garage" class="btn btn-gold">GARAGE / UPGRADES</button>
+            <button id="btn-levelcomplete-menu" class="btn">MAIN MENU</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multiplayer Race Results Modal -->
+      <div id="modal-mp-results" class="modal-overlay">
+        <div class="modal-box" style="max-width: 400px;">
+          <h2 class="modal-title" style="color: var(--accent-gold);">🏆 RACE PODIUM</h2>
+          <p style="color: var(--text-muted); font-size: 13px;">Official 3000m Sprint Standings</p>
+          
+          <div id="mp-results-list" class="mp-results-list">
+            <!-- Dynamically populated via ui.js -->
+          </div>
+
+          <div class="mp-reward-pill">
+            <span>Coins Earned:</span>
+            <strong id="mp-results-coins" style="color: #fef08a;">+150 🪙</strong>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button id="btn-mp-results-rematch" class="btn btn-primary">🏁 RACE AGAIN</button>
+            <button id="btn-mp-results-menu" class="btn">MAIN MENU</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JavaScript Modules in Dependency Order -->
+  <script src="js/config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/road.js"></script>
+  <script src="js/powerups.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/enemy.js"></script>
+  <script src="js/multiplayer.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

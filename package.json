@@ -1,0 +1,24 @@
+{
+  "name": "street-rush-2d",
+  "version": "1.1.0",
+  "description": "Street Rush 2D - Arcade Racing Game with Real-time Multiplayer",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "keywords": [
+    "game",
+    "racing",
+    "multiplayer",
+    "canvas",
+    "websockets"
+  ],
+  "author": "Street Rush Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
